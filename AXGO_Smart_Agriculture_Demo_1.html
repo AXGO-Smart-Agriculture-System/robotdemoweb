@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AXGO Smart Agriculture — Hệ thống quản lý</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{
+  --forest:#1B4332; --field:#2D6A4F; --leaf:#40916C; --mint:#95D5B2; --pale:#E9F5EE;
+  --bg:#F3F7F4; --card:#FFFFFF; --ink:#122B1E; --muted:#5E7268; --line:#DCE8E0;
+  --amber:#E9A23B; --red:#D64545; --blue:#3B82C4;
+  --mono:'IBM Plex Mono',monospace; --sans:'Be Vietnam Pro',sans-serif;
+  --r:14px; --shadow:0 1px 3px rgba(18,43,30,.06),0 8px 24px rgba(18,43,30,.05);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);font-size:14px;line-height:1.5}
+button{font-family:inherit;cursor:pointer;border:none;background:none}
+.app{display:flex;min-height:100vh}
+
+/* ===== SIDEBAR ===== */
+.side{width:232px;background:var(--forest);color:#DCEFE3;display:flex;flex-direction:column;position:fixed;top:0;bottom:0;left:0;z-index:40}
+.logo{padding:22px 20px 18px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.08)}
+.logo-mark{width:36px;height:36px;border-radius:10px;background:var(--mint);color:var(--forest);display:grid;place-items:center;font-weight:800;font-size:15px}
+.logo b{font-size:15px;letter-spacing:.4px;color:#fff}
+.logo span{display:block;font-size:10.5px;color:#9CC7AE;font-weight:500}
+.nav{padding:14px 12px;flex:1;display:flex;flex-direction:column;gap:4px}
+.nav button{display:flex;align-items:center;gap:11px;width:100%;padding:10px 12px;border-radius:10px;color:#B9D8C5;font-size:13.5px;font-weight:500;text-align:left;transition:.15s}
+.nav button:hover{background:rgba(255,255,255,.07);color:#fff}
+.nav button.on{background:var(--leaf);color:#fff;font-weight:600}
+.nav svg{width:18px;height:18px;flex:none}
+.side-foot{padding:16px 20px;font-size:11px;color:#7FAF93;border-top:1px solid rgba(255,255,255,.08)}
+.side-foot b{color:#C9E7D5;display:block;font-size:12px}
+
+/* ===== MAIN ===== */
+.main{margin-left:232px;flex:1;min-width:0}
+.topbar{background:var(--card);border-bottom:1px solid var(--line);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:30}
+.topbar h1{font-size:17px;font-weight:700}
+.topbar .crumb{font-size:12px;color:var(--muted)}
+.top-right{display:flex;align-items:center;gap:12px}
+.live-pill{display:flex;align-items:center;gap:7px;background:var(--pale);border:1px solid var(--line);border-radius:99px;padding:6px 13px;font-size:12px;font-weight:600;color:var(--field)}
+.dot{width:8px;height:8px;border-radius:50%;background:#31B36B;animation:pulse 1.6s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(49,179,107,.5)}50%{box-shadow:0 0 0 5px rgba(49,179,107,0)}}
+.lang-sw{display:flex;background:var(--bg);border:1px solid var(--line);border-radius:99px;padding:3px;gap:2px}
+.lang-sw button{padding:5px 12px;border-radius:99px;font-size:12px;font-weight:700;color:var(--muted)}
+.lang-sw button.on{background:var(--field);color:#fff}
+.avatar{width:34px;height:34px;border-radius:50%;background:var(--field);color:#fff;display:grid;place-items:center;font-weight:700;font-size:13px}
+.page{padding:26px 28px 40px;display:none}
+.page.on{display:block}
+
+/* ===== CARDS / GRID ===== */
+.grid{display:grid;gap:16px}
+.g4{grid-template-columns:repeat(4,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g2{grid-template-columns:repeat(2,1fr)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.card-h{padding:16px 20px 0;display:flex;align-items:center;justify-content:space-between}
+.card-h h3{font-size:14px;font-weight:700}
+.card-h .sub{font-size:11.5px;color:var(--muted);font-weight:400;margin-top:1px}
+.card-b{padding:16px 20px 20px}
+.stat{padding:18px 20px}
+.stat .lbl{font-size:12px;color:var(--muted);font-weight:500;display:flex;align-items:center;gap:7px}
+.stat .val{font-family:var(--mono);font-size:27px;font-weight:600;margin-top:6px}
+.stat .delta{font-size:11.5px;margin-top:3px;font-weight:600}
+.up{color:var(--leaf)}.warn{color:var(--amber)}.bad{color:var(--red)}
+.ico{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;flex:none}
+.ico svg{width:16px;height:16px}
+.i-green{background:var(--pale);color:var(--field)}
+.i-amber{background:#FBF1DE;color:#B57A17}
+.i-red{background:#FBE7E7;color:var(--red)}
+.i-blue{background:#E5EFF8;color:var(--blue)}
+
+.badge{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:99px;font-size:11.5px;font-weight:600}
+.b-on{background:var(--pale);color:var(--field)}
+.b-off{background:#EEF1EF;color:#78857D}
+.b-warn{background:#FBF1DE;color:#B57A17}
+.b-err{background:#FBE7E7;color:var(--red)}
+.b-blue{background:#E5EFF8;color:#2A6AA5}
+.badge .dot{animation:none}
+.b-on .dot{background:#31B36B}.b-off .dot{background:#9AA6A0}.b-warn .dot{background:var(--amber)}.b-err .dot{background:var(--red)}.b-blue .dot{background:var(--blue)}
+
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);font-weight:600;padding:10px 12px;border-bottom:1px solid var(--line)}
+td{padding:12px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr.rowbtn{cursor:pointer;transition:.12s}
+tr.rowbtn:hover{background:var(--pale)}
+.mono{font-family:var(--mono);font-size:12.5px}
+
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border-radius:10px;font-size:13px;font-weight:600;transition:.15s;border:1px solid transparent}
+.btn-p{background:var(--field);color:#fff}.btn-p:hover{background:var(--forest)}
+.btn-o{background:#fff;border-color:var(--line);color:var(--ink)}.btn-o:hover{border-color:var(--field);color:var(--field)}
+.btn-d{background:#FBE7E7;color:var(--red)}.btn-d:hover{background:#F5D4D4}
+.btn-sm{padding:6px 12px;font-size:12px;border-radius:8px}
+
+/* ===== FARM MAP ===== */
+.map-wrap{position:relative;border-radius:12px;overflow:hidden;background:#EAF3EC}
+.map-legend{position:absolute;bottom:12px;left:12px;background:rgba(255,255,255,.94);border:1px solid var(--line);border-radius:10px;padding:9px 13px;font-size:11.5px;display:flex;gap:14px}
+.lg{display:flex;align-items:center;gap:6px;font-weight:500}
+.sq{width:11px;height:11px;border-radius:3px}
+.plot{transition:.2s;cursor:pointer}
+.plot:hover{filter:brightness(.96)}
+.robot-marker{cursor:pointer}
+.map-tip{position:absolute;pointer-events:none;background:var(--forest);color:#fff;padding:7px 11px;border-radius:8px;font-size:11.5px;opacity:0;transition:.15s;transform:translate(-50%,-120%);white-space:nowrap;z-index:5}
+.map-tip.show{opacity:1}
+
+/* ===== ROBOT CONTROL ===== */
+.robot-card{padding:18px;border:1px solid var(--line);border-radius:12px;cursor:pointer;transition:.15s;background:#fff}
+.robot-card:hover{border-color:var(--leaf)}
+.robot-card.sel{border-color:var(--field);box-shadow:0 0 0 3px var(--pale)}
+.robot-card .rn{font-weight:700;font-size:14.5px;display:flex;align-items:center;justify-content:space-between}
+.rmeta{display:flex;gap:16px;margin-top:12px;font-size:12px;color:var(--muted)}
+.rmeta b{display:block;color:var(--ink);font-family:var(--mono);font-size:13.5px;font-weight:600}
+.batt{height:6px;background:#EDF2EE;border-radius:99px;margin-top:12px;overflow:hidden}
+.batt i{display:block;height:100%;border-radius:99px;background:var(--leaf);transition:width .5s}
+
+.dpad{display:grid;grid-template-columns:repeat(3,60px);grid-template-rows:repeat(3,60px);gap:8px;justify-content:center}
+.dbtn{border-radius:14px;background:var(--pale);border:1px solid var(--line);display:grid;place-items:center;color:var(--field);transition:.1s;font-size:10.5px;font-weight:700}
+.dbtn svg{width:22px;height:22px}
+.dbtn:hover{background:#DCEFE3}
+.dbtn:active,.dbtn.press{background:var(--field);color:#fff;transform:scale(.95)}
+.dbtn.stop{background:#FBE7E7;color:var(--red);border-color:#F3CFCF}
+.dbtn.stop:active{background:var(--red);color:#fff}
+
+.slider-row{display:flex;align-items:center;gap:14px;margin-top:6px}
+input[type=range]{flex:1;accent-color:var(--field);height:4px}
+.pwm-val{font-family:var(--mono);font-weight:600;font-size:15px;min-width:90px;text-align:right}
+.pinbox{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+.pin{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;text-align:center}
+.pin .pn{font-size:10.5px;color:var(--muted);font-weight:600;letter-spacing:.5px}
+.pin .pv{font-family:var(--mono);font-weight:600;font-size:15px;margin-top:3px}
+.pin.hi .pv{color:var(--field)}
+.pin.lo .pv{color:#9AA6A0}
+
+.log{background:#0F2318;border-radius:12px;padding:14px 16px;font-family:var(--mono);font-size:11.5px;color:#9CC7AE;height:200px;overflow-y:auto;line-height:1.85}
+.log .t{color:#5E8A70}
+.log .ok{color:#7BE0A8}.log .wn{color:#E9C46A}.log .er{color:#F08A8A}
+
+/* ===== CAMERA ===== */
+.cam-wrap{position:relative;border-radius:12px;overflow:hidden;background:#0B1A12}
+.cam-wrap canvas{width:100%;display:block}
+.cam-hud{position:absolute;inset:0;pointer-events:none;font-family:var(--mono)}
+.cam-rec{position:absolute;top:12px;left:14px;display:flex;align-items:center;gap:7px;color:#fff;font-size:11.5px;font-weight:600;background:rgba(0,0,0,.4);padding:4px 11px;border-radius:99px}
+.cam-rec i{width:9px;height:9px;border-radius:50%;background:#FF4B4B;animation:blink 1.1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+.cam-meta{position:absolute;top:12px;right:14px;color:#D9F2E2;font-size:11px;text-align:right;background:rgba(0,0,0,.4);padding:5px 11px;border-radius:8px;line-height:1.6}
+.cam-bottom{position:absolute;bottom:10px;left:14px;right:14px;display:flex;justify-content:space-between;color:#BFE8CE;font-size:10.5px}
+.cam-cross{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;border:1.5px solid rgba(149,213,178,.75);border-radius:6px}
+.cam-cross:before,.cam-cross:after{content:'';position:absolute;background:rgba(149,213,178,.75)}
+.cam-cross:before{left:50%;top:-8px;bottom:-8px;width:1.5px;transform:translateX(-50%)}
+.cam-cross:after{top:50%;left:-8px;right:-8px;height:1.5px;transform:translateY(-50%)}
+.cam-ctl{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+.cam-flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;transition:opacity .35s}
+
+/* ===== CHARTS ===== */
+.chart-svg{width:100%;height:200px;display:block}
+.axis-lbl{font-size:10px;fill:var(--muted);font-family:var(--mono)}
+.gauge-row{display:flex;gap:26px;align-items:center}
+.gauge{position:relative;width:118px;height:118px;flex:none}
+.gauge .gv{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+.gauge .gv b{font-family:var(--mono);font-size:21px;font-weight:600}
+.gauge .gv span{font-size:10.5px;color:var(--muted)}
+.thresh{display:flex;flex-direction:column;gap:9px;flex:1}
+.thresh .tr{display:flex;justify-content:space-between;font-size:12.5px}
+.thresh .tr b{font-family:var(--mono)}
+
+/* ===== TRACE ===== */
+.lot-status{font-size:11px;padding:3px 9px;border-radius:99px;font-weight:600}
+.qr-panel{display:flex;gap:22px;align-items:flex-start}
+.qr-box{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;flex:none}
+.timeline{position:relative;padding-left:26px}
+.timeline:before{content:'';position:absolute;left:8px;top:6px;bottom:6px;width:2px;background:var(--line)}
+.tl-item{position:relative;padding-bottom:18px}
+.tl-item:last-child{padding-bottom:0}
+.tl-item:before{content:'';position:absolute;left:-24px;top:4px;width:12px;height:12px;border-radius:50%;background:#fff;border:3px solid var(--leaf)}
+.tl-item.h:before{border-color:var(--amber)}
+.tl-item .tt{font-weight:700;font-size:13px}
+.tl-item .tm{font-family:var(--mono);font-size:11px;color:var(--leaf);font-weight:600}
+
+/* ===== CONSUMER MODAL ===== */
+.modal-bg{position:fixed;inset:0;background:rgba(15,35,24,.55);z-index:100;display:none;align-items:flex-start;justify-content:center;padding:34px 16px;overflow-y:auto}
+.modal-bg.on{display:flex}
+.phone{width:400px;max-width:100%;background:#F6FAF7;border-radius:22px;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.35)}
+.phone-hero{background:linear-gradient(150deg,var(--forest),var(--leaf));color:#fff;padding:24px 22px 20px;position:relative}
+.phone-hero .close{position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.18);color:#fff;font-size:15px}
+.verify{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.16);border-radius:99px;padding:5px 12px;font-size:11.5px;font-weight:600;margin-bottom:12px}
+.phone-hero h2{font-size:20px;font-weight:800}
+.phone-hero p{font-size:12.5px;opacity:.85;margin-top:3px;font-family:var(--mono)}
+.phone-b{padding:18px 20px 26px;display:flex;flex-direction:column;gap:14px}
+.pcard{background:#fff;border:1px solid var(--line);border-radius:14px;padding:15px 16px}
+.pcard h4{font-size:12px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);margin-bottom:10px}
+.kv{display:flex;justify-content:space-between;font-size:13px;padding:5px 0;gap:12px}
+.kv span{color:var(--muted)}
+.kv b{font-weight:600;text-align:right}
+.env-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.env{background:var(--pale);border-radius:10px;padding:10px 12px;text-align:center}
+.env b{font-family:var(--mono);font-size:16px;display:block}
+.env span{font-size:10.5px;color:var(--muted)}
+
+.toast{position:fixed;bottom:24px;right:24px;background:var(--forest);color:#fff;padding:13px 18px;border-radius:12px;font-size:13px;font-weight:500;box-shadow:0 10px 30px rgba(0,0,0,.25);transform:translateY(80px);opacity:0;transition:.3s;z-index:200;display:flex;gap:10px;align-items:center}
+.toast.show{transform:none;opacity:1}
+
+.alert-item{display:flex;gap:12px;padding:11px 0;border-bottom:1px solid var(--line);align-items:flex-start}
+.alert-item:last-child{border-bottom:none}
+.alert-item .at{font-size:13px;font-weight:600}
+.alert-item .ad{font-size:11.5px;color:var(--muted)}
+.mt16{margin-top:16px}
+
+@media(max-width:1100px){.g4{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr}.g2{grid-template-columns:1fr}}
+@media(max-width:860px){.side{width:64px}.logo span,.logo b,.nav button span,.side-foot{display:none}.main{margin-left:64px}.nav button{justify-content:center;padding:12px}}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ============ SIDEBAR ============ -->
+<aside class="side">
+  <div class="logo">
+    <div class="logo-mark">AX</div>
+    <div><b>AXGO FARM</b><span>Smart Agriculture System</span></div>
+  </div>
+  <nav class="nav">
+    <button class="on" data-page="dash" onclick="go('dash',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+      <span data-i18n="nav_dash">Tổng quan</span></button>
+    <button data-page="robot" onclick="go('robot',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="8" width="16" height="10" rx="2"/><circle cx="9" cy="13" r="1.4" fill="currentColor" stroke="none"/><circle cx="15" cy="13" r="1.4" fill="currentColor" stroke="none"/><path d="M12 8V4M8 4h8"/></svg>
+      <span data-i18n="nav_robot">Quản lý Robot</span></button>
+    <button data-page="sensor" onclick="go('sensor',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 4a2 2 0 1 0-4 0v9a4.5 4.5 0 1 0 4 0z"/><path d="M12 9v6"/></svg>
+      <span data-i18n="nav_sensor">Cảm biến môi trường</span></button>
+    <button data-page="trace" onclick="go('trace',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 14h3v3h-3zM19 15v6M14 20h3"/></svg>
+      <span data-i18n="nav_trace">Truy xuất nguồn gốc</span></button>
+  </nav>
+  <div class="side-foot"><b>AXGO Competition</b>Robot • IoT • Traceability</div>
+</aside>
+
+<!-- ============ MAIN ============ -->
+<div class="main">
+  <div class="topbar">
+    <div><h1 id="pageTitle">Tổng quan trang trại</h1><div class="crumb" id="pageCrumb">Bản đồ • Robot • Cảm biến • Cảnh báo</div></div>
+    <div class="top-right">
+      <div class="lang-sw"><button id="langVI" class="on" onclick="setLang('vi')">VI</button><button id="langEN" onclick="setLang('en')">EN</button></div>
+      <div class="live-pill"><span class="dot"></span> <span data-i18n="esp_conn">ESP32 đã kết nối</span></div>
+      <div class="avatar">QT</div>
+    </div>
+  </div>
+
+  <!-- ======== PAGE: DASHBOARD ======== -->
+  <section class="page on" id="page-dash">
+    <div class="grid g4">
+      <div class="card stat"><div class="lbl"><span class="ico i-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="8" width="16" height="10" rx="2"/><path d="M12 8V4"/></svg></span><span data-i18n="st_robots">Robot đang hoạt động</span></div><div class="val">2 / 3</div><div class="delta up" data-i18n="st_robots_d">AXGO-02 đang tuần tra khu B</div></div>
+      <div class="card stat"><div class="lbl"><span class="ico i-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 4a2 2 0 1 0-4 0v9a4.5 4.5 0 1 0 4 0z"/></svg></span><span data-i18n="st_temp">Nhiệt độ trung bình</span></div><div class="val"><span id="stTemp">31.2</span>°C</div><div class="delta warn" data-i18n="st_temp_d">+1.4°C so với 1 giờ trước</div></div>
+      <div class="card stat"><div class="lbl"><span class="ico i-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3s6 6.5 6 11a6 6 0 1 1-12 0c0-4.5 6-11 6-11z"/></svg></span><span data-i18n="st_hum">Độ ẩm không khí</span></div><div class="val"><span id="stHum">68</span>%</div><div class="delta up" data-i18n="st_hum_d">Trong ngưỡng an toàn</div></div>
+      <div class="card stat"><div class="lbl"><span class="ico i-red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v4M12 17.5v.5"/></svg></span><span data-i18n="st_alert">Cảnh báo hôm nay</span></div><div class="val">3</div><div class="delta bad" data-i18n="st_alert_d">1 cảnh báo nhiệt độ chưa xử lý</div></div>
+    </div>
+
+    <div class="grid mt16" style="grid-template-columns:1.7fr 1fr">
+      <div class="card">
+        <div class="card-h"><div><h3 data-i18n="map_t">Bản đồ trang trại thời gian thực</h3><div class="sub" data-i18n="map_s">Vị trí robot, trạng thái khu canh tác và điểm cảm biến</div></div><span class="badge b-on"><span class="dot"></span><span data-i18n="map_live">Cập nhật trực tiếp</span></span></div>
+        <div class="card-b">
+          <div class="map-wrap" id="mapWrap">
+            <svg id="farmMap" viewBox="0 0 720 400" style="width:100%;display:block">
+              <defs>
+                <pattern id="rows" width="14" height="14" patternUnits="userSpaceOnUse"><path d="M0 7h14" stroke="#CDE4D3" stroke-width="2"/></pattern>
+                <pattern id="rowsW" width="14" height="14" patternUnits="userSpaceOnUse"><path d="M0 7h14" stroke="#EBD9B4" stroke-width="2"/></pattern>
+              </defs>
+              <rect width="720" height="400" fill="#EAF3EC"/>
+              <path d="M0 200 H720" stroke="#D9CDBA" stroke-width="26"/>
+              <path d="M360 0 V400" stroke="#D9CDBA" stroke-width="26"/>
+              <g id="plots"></g>
+              <ellipse cx="646" cy="330" rx="52" ry="36" fill="#BBDCEC" stroke="#9CC6DC" stroke-width="2"/>
+              <text x="646" y="335" text-anchor="middle" font-size="11" fill="#4A7C96" font-weight="600" data-i18n-svg="map_pond">Ao tưới</text>
+              <g transform="translate(348,188)"><rect width="24" height="24" rx="5" fill="#40332B"/><circle cx="12" cy="12" r="4" fill="#E9C46A"/></g>
+              <text x="360" y="230" text-anchor="middle" font-size="10" fill="#6B5D4F" font-weight="600" data-i18n-svg="map_base">Trạm sạc / Gateway</text>
+              <g id="robotLayer"></g>
+            </svg>
+            <div class="map-tip" id="mapTip"></div>
+            <div class="map-legend">
+              <span class="lg"><span class="sq" style="background:#A9D6B8"></span><span data-i18n="lg_grow">Đang canh tác</span></span>
+              <span class="lg"><span class="sq" style="background:#EBD9B4"></span><span data-i18n="lg_harv">Sắp thu hoạch</span></span>
+              <span class="lg"><span class="sq" style="background:#2D6A4F"></span>Robot</span>
+              <span class="lg"><span class="sq" style="background:#D64545;border-radius:50%"></span><span data-i18n="lg_alert">Cảnh báo</span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h"><div><h3 data-i18n="al_t">Cảnh báo gần đây</h3><div class="sub" data-i18n="al_s">Ngưỡng do người quản lý thiết lập</div></div></div>
+        <div class="card-b" id="alertList"></div>
+      </div>
+    </div>
+
+    <div class="grid g2 mt16">
+      <div class="card">
+        <div class="card-h"><div><h3 data-i18n="ch_temp">Nhiệt độ 24 giờ (°C)</h3><div class="sub" data-i18n="ch_temp_s">Dữ liệu từ cảm biến trên robot, gửi qua ESP32</div></div></div>
+        <div class="card-b"><svg class="chart-svg" id="chTemp"></svg></div>
+      </div>
+      <div class="card">
+        <div class="card-h"><div><h3 data-i18n="ch_hum">Độ ẩm 24 giờ (%)</h3><div class="sub" data-i18n="ch_hum_s">Trung bình toàn bộ khu canh tác</div></div></div>
+        <div class="card-b"><svg class="chart-svg" id="chHum"></svg></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======== PAGE: ROBOT ======== -->
+  <section class="page" id="page-robot">
+    <div class="grid g3" id="robotCards"></div>
+
+    <div class="grid mt16" style="grid-template-columns:1.35fr 1fr">
+      <div class="card">
+        <div class="card-h"><div><h3 data-i18n="cam_t">Camera trực tiếp từ robot</h3><div class="sub"><span data-i18n="cam_s">Luồng video mô phỏng từ</span> <b id="camName" class="mono">AXGO-01</b> — 720p • 24 fps</div></div><span class="badge b-err"><span class="dot"></span>LIVE</span></div>
+        <div class="card-b">
+          <div class="cam-wrap">
+            <canvas id="camCanvas" width="640" height="360"></canvas>
+            <div class="cam-hud">
+              <div class="cam-rec"><i></i>REC</div>
+              <div class="cam-meta"><span id="camClock">--:--:--</span><br><span id="camInfo">CAM-FRONT • RSSI -58 dBm</span></div>
+              <div class="cam-cross"></div>
+              <div class="cam-bottom"><span id="camGPS">21.1362°N, 105.8215°E</span><span id="camBatt">BAT 82% • 0.0 m/s</span></div>
+            </div>
+            <div class="cam-flash" id="camFlash"></div>
+          </div>
+          <div class="cam-ctl">
+            <button class="btn btn-o btn-sm" onclick="switchCam()">🔄 <span data-i18n="cam_sw">Đổi camera trước/sau</span></button>
+            <button class="btn btn-o btn-sm" onclick="snapshot()">📷 <span data-i18n="cam_snap">Chụp ảnh hiện trường</span></button>
+            <button class="btn btn-o btn-sm" onclick="toast(t('toast_rec'))">⏺ <span data-i18n="cam_rec">Ghi video 30 giây</span></button>
+            <button class="btn btn-o btn-sm" onclick="toast(t('toast_ai'))">🌿 <span data-i18n="cam_ai">Phân tích sâu bệnh (AI)</span></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h"><div><h3 data-i18n="ctl_t">Bảng điều khiển</h3><div class="sub"><span data-i18n="ctl_s">Điều khiển thủ công robot</span> <b id="ctlName" class="mono">AXGO-01</b></div></div></div>
+        <div class="card-b">
+          <div class="dpad" id="dpad">
+            <span></span>
+            <button class="dbtn" data-cmd="F"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+            <span></span>
+            <button class="dbtn" data-cmd="L"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button>
+            <button class="dbtn stop" data-cmd="S" data-i18n="btn_stop">DỪNG</button>
+            <button class="dbtn" data-cmd="R"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+            <span></span>
+            <button class="dbtn" data-cmd="B"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M19 12l-7 7-7-7"/></svg></button>
+            <span></span>
+          </div>
+          <div class="mt16">
+            <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);font-weight:600"><span data-i18n="pwm_lbl">Tốc độ (PWM → ENA/ENB)</span><span class="mono" id="pwmPct">70%</span></div>
+            <div class="slider-row"><input type="range" id="pwm" min="0" max="255" value="178"><div class="pwm-val" id="pwmRaw">178 / 255</div></div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
+            <button class="btn btn-p" style="flex:1" id="btnAuto" onclick="toggleAuto()">▶ <span data-i18n="btn_auto">Chạy tuần tra tự động</span></button>
+            <button class="btn btn-o" onclick="sendHome()" data-i18n="btn_home">Về trạm sạc</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid mt16" style="grid-template-columns:1.35fr 1fr">
+      <div class="card">
+        <div class="card-h"><div><h3 data-i18n="l298_t">Trạng thái Arduino + L298N</h3><div class="sub" data-i18n="l298_s">Tín hiệu chân điều khiển mô phỏng theo lệnh</div></div><span class="badge b-blue"><span class="dot"></span>UART 115200</span></div>
+        <div class="card-b">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+            <div>
+              <div style="font-size:12px;font-weight:700;color:var(--muted)" data-i18n="motorA">MOTOR A (bánh trái)</div>
+              <div class="pinbox">
+                <div class="pin" id="pIN1"><div class="pn">IN1</div><div class="pv">LOW</div></div>
+                <div class="pin" id="pIN2"><div class="pn">IN2</div><div class="pv">LOW</div></div>
+                <div class="pin" id="pENA"><div class="pn">ENA (PWM)</div><div class="pv">0</div></div>
+              </div>
+            </div>
+            <div>
+              <div style="font-size:12px;font-weight:700;color:var(--muted)" data-i18n="motorB">MOTOR B (bánh phải)</div>
+              <div class="pinbox">
+                <div class="pin" id="pIN3"><div class="pn">IN3</div><div class="pv">LOW</div></div>
+                <div class="pin" id="pIN4"><div class="pn">IN4</div><div class="pv">LOW</div></div>
+                <div class="pin" id="pENB"><div class="pn">ENB (PWM)</div><div class="pv">0</div></div>
+              </div>
+            </div>
+          </div>
+          <div class="mt16" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+            <div class="pin"><div class="pn" data-i18n="pn_dir">HƯỚNG</div><div class="pv" id="pvDir">—</div></div>
+            <div class="pin"><div class="pn" data-i18n="pn_spd">TỐC ĐỘ</div><div class="pv"><span id="pvSpd">0.0</span> m/s</div></div>
+            <div class="pin"><div class="pn" data-i18n="pn_amp">DÒNG TẢI</div><div class="pv"><span id="pvAmp">0.2</span> A</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h"><div><h3 data-i18n="log_t">Nhật ký lệnh</h3><div class="sub">Robot ↔ ESP32 ↔ Server</div></div><button class="btn btn-o btn-sm" onclick="clearLog()" data-i18n="log_clear">Xoá</button></div>
+        <div class="card-b"><div class="log" id="cmdLog"></div></div>
+      </div>
+    </div>
+
+    <div class="card mt16">
+      <div class="card-h"><div><h3 data-i18n="rl_t">Danh sách thiết bị robot</h3><div class="sub" data-i18n="rl_s">Nhấn vào một dòng để chọn robot cần điều khiển</div></div><button class="btn btn-p btn-sm" onclick="toast(t('toast_addr'))" data-i18n="rl_add">+ Thêm robot</button></div>
+      <div class="card-b" style="padding-top:4px">
+        <table>
+          <thead><tr><th data-i18n="th_id">Mã thiết bị</th><th data-i18n="th_zone">Khu vực</th><th data-i18n="th_status">Trạng thái</th><th>Pin</th><th data-i18n="th_spd">Tốc độ</th><th data-i18n="th_conn">Kết nối</th><th data-i18n="th_maint">Bảo trì gần nhất</th><th></th></tr></thead>
+          <tbody id="robotTbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======== PAGE: SENSOR ======== -->
+  <section class="page" id="page-sensor">
+    <div class="grid g3">
+      <div class="card">
+        <div class="card-h"><div><h3 data-i18n="s_temp">Nhiệt độ không khí</h3><div class="sub" data-i18n="s_dht">Cảm biến DHT22 trên robot</div></div></div>
+        <div class="card-b gauge-row">
+          <div class="gauge" id="gTemp"></div>
+          <div class="thresh">
+            <div class="tr"><span data-i18n="s_cur">Hiện tại</span><b id="gTempV">--</b></div>
+            <div class="tr"><span data-i18n="s_th">Ngưỡng cảnh báo</span><b>≥ 35.0°C</b></div>
+            <div class="tr"><span data-i18n="s_st">Trạng thái</span><span class="badge b-on" id="gTempS"><span class="dot"></span><span data-i18n="s_ok">Bình thường</span></span></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-h"><div><h3 data-i18n="s_hum">Độ ẩm không khí</h3><div class="sub" data-i18n="s_dht2">Cảm biến DHT22 trên robot</div></div></div>
+        <div class="card-b gauge-row">
+          <div class="gauge" id="gHum"></div>
+          <div class="thresh">
+            <div class="tr"><span data-i18n="s_cur2">Hiện tại</span><b id="gHumV">--</b></div>
+            <div class="tr"><span data-i18n="s_th2">Ngưỡng cảnh báo</span><b>&lt; 40% / &gt; 90%</b></div>
+            <div class="tr"><span data-i18n="s_st2">Trạng thái</span><span class="badge b-on" id="gHumS"><span class="dot"></span><span data-i18n="s_ok2">Bình thường</span></span></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-h"><div><h3 data-i18n="s_air">Chất lượng không khí</h3><div class="sub" data-i18n="s_mq">Cảm biến MQ-135 (chỉ số tương đối)</div></div></div>
+        <div class="card-b gauge-row">
+          <div class="gauge" id="gAir"></div>
+          <div class="thresh">
+            <div class="tr"><span data-i18n="s_cur3">Hiện tại</span><b id="gAirV">--</b></div>
+            <div class="tr"><span data-i18n="s_th3">Ngưỡng cảnh báo</span><b>&gt; 300 ppm</b></div>
+            <div class="tr"><span data-i18n="s_st3">Trạng thái</span><span class="badge b-on" id="gAirS"><span class="dot"></span><span data-i18n="s_ok3">Bình thường</span></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mt16">
+      <div class="card-h"><div><h3 data-i18n="lv_t">Dữ liệu trực tiếp (cập nhật mỗi 2 giây)</h3><div class="sub" data-i18n="lv_s">Luồng: Robot &amp; cảm biến → ESP32 → Wi-Fi → Cloud API → Dashboard</div></div><span class="badge b-on"><span class="dot"></span><span data-i18n="lv_rx">Đang nhận dữ liệu</span></span></div>
+      <div class="card-b"><svg class="chart-svg" id="chLive" style="height:240px"></svg>
+        <div style="display:flex;gap:20px;margin-top:10px;font-size:12px;font-weight:600">
+          <span style="color:#C0662B">━ <span data-i18n="lv_t2">Nhiệt độ (°C)</span></span><span style="color:#3B82C4">━ <span data-i18n="lv_h2">Độ ẩm (%)</span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mt16">
+      <div class="card-h"><div><h3 data-i18n="sr_t">Bản ghi cảm biến mới nhất</h3><div class="sub" data-i18n="sr_s">Được lưu vào cơ sở dữ liệu đám mây kèm vị trí robot</div></div><button class="btn btn-o btn-sm" onclick="toast(t('toast_csv'))" data-i18n="sr_csv">Xuất CSV</button></div>
+      <div class="card-b" style="padding-top:4px">
+        <table><thead><tr><th data-i18n="th_time">Thời gian</th><th data-i18n="th_dev">Thiết bị</th><th data-i18n="th_z">Khu</th><th data-i18n="th_t">Nhiệt độ</th><th data-i18n="th_h">Độ ẩm</th><th data-i18n="th_a">Không khí</th><th data-i18n="th_s2">Trạng thái</th></tr></thead>
+        <tbody id="sensorTbody"></tbody></table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======== PAGE: TRACE ======== -->
+  <section class="page" id="page-trace">
+    <div class="grid g4">
+      <div class="card stat"><div class="lbl"><span class="ico i-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 14h7v7h-7z"/></svg></span><span data-i18n="tr1">Lô sản phẩm đã cấp QR</span></div><div class="val">12</div><div class="delta up" data-i18n="tr1d">+2 lô trong tuần này</div></div>
+      <div class="card stat"><div class="lbl"><span class="ico i-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></span><span data-i18n="tr2">Lượt quét QR tháng này</span></div><div class="val">1,284</div><div class="delta up" data-i18n="tr2d">Người tiêu dùng quan tâm nguồn gốc</div></div>
+      <div class="card stat"><div class="lbl"><span class="ico i-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V5l8 4 8-4v14l-8 4z"/></svg></span><span data-i18n="tr3">Bản ghi chăm sóc</span></div><div class="val">87</div><div class="delta" data-i18n="tr3d">Tự động ghi kèm dữ liệu cảm biến</div></div>
+      <div class="card stat"><div class="lbl"><span class="ico i-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg></span><span data-i18n="tr4">Lô đạt chuẩn xuất bán</span></div><div class="val">9</div><div class="delta up" data-i18n="tr4d">Đầy đủ hồ sơ truy xuất</div></div>
+    </div>
+
+    <div class="grid mt16" style="grid-template-columns:1.5fr 1fr">
+      <div class="card">
+        <div class="card-h"><div><h3 data-i18n="lot_t">Danh sách lô nông sản</h3><div class="sub" data-i18n="lot_s">Nhấn vào lô để xem mã QR và hồ sơ truy xuất</div></div><button class="btn btn-p btn-sm" onclick="toast(t('toast_lot'))" data-i18n="lot_add">+ Tạo lô mới</button></div>
+        <div class="card-b" style="padding-top:4px">
+          <table><thead><tr><th data-i18n="th_lot">Mã lô</th><th data-i18n="th_prod">Sản phẩm</th><th data-i18n="th_zone2">Khu canh tác</th><th data-i18n="th_sow">Ngày gieo trồng</th><th data-i18n="th_harv">Thu hoạch (dự kiến)</th><th data-i18n="th_st3">Trạng thái</th></tr></thead>
+          <tbody id="lotTbody"></tbody></table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h"><div><h3 data-i18n="qr_t">Mã QR truy xuất</h3><div class="sub" id="qrSub">—</div></div></div>
+        <div class="card-b">
+          <div class="qr-panel">
+            <div class="qr-box"><div id="qrcode"></div></div>
+            <div style="flex:1">
+              <div style="font-size:13px;color:var(--muted);line-height:1.6" data-i18n="qr_d">Người tiêu dùng quét mã trên bao bì để xem nguồn gốc, quy trình chăm sóc và điều kiện môi trường của lô hàng.</div>
+              <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px">
+                <button class="btn btn-p" onclick="openConsumer()">📱 <span data-i18n="qr_view">Xem trang người tiêu dùng</span></button>
+                <button class="btn btn-o" onclick="toast(t('toast_qr'))" data-i18n="qr_print">Tải tem QR để in</button>
+              </div>
+            </div>
+          </div>
+          <div class="mt16">
+            <h4 style="font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:12px" data-i18n="qr_rec">Hồ sơ chăm sóc &amp; thu hoạch</h4>
+            <div class="timeline" id="lotTimeline"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+</div>
+
+<!-- ============ CONSUMER MODAL ============ -->
+<div class="modal-bg" id="consumerModal" onclick="if(event.target===this)closeConsumer()">
+  <div class="phone">
+    <div class="phone-hero">
+      <button class="close" onclick="closeConsumer()">✕</button>
+      <div class="verify">✓ <span data-i18n="cp_verify">Nguồn gốc đã xác thực bởi AXGO Farm</span></div>
+      <h2 id="cpName">—</h2>
+      <p id="cpLot">—</p>
+    </div>
+    <div class="phone-b">
+      <div class="pcard">
+        <h4 data-i18n="cp_origin">Thông tin nguồn gốc</h4>
+        <div class="kv"><span data-i18n="cp_place">Nơi sản xuất</span><b data-i18n="cp_place_v">AXGO Farm — Khu A2, Đông Anh, Hà Nội</b></div>
+        <div class="kv"><span data-i18n="cp_farmer">Hộ canh tác</span><b>Nguyễn Văn Quang</b></div>
+        <div class="kv"><span data-i18n="cp_sow">Ngày gieo trồng</span><b id="cpSow">—</b></div>
+        <div class="kv"><span data-i18n="cp_harv">Ngày thu hoạch</span><b id="cpHarvest">—</b></div>
+        <div class="kv"><span data-i18n="cp_cert">Chứng nhận</span><b data-i18n="cp_cert_v">VietGAP • Không thuốc BVTV hoá học</b></div>
+      </div>
+      <div class="pcard">
+        <h4 data-i18n="cp_env">Điều kiện môi trường trong vụ (từ robot giám sát)</h4>
+        <div class="env-grid">
+          <div class="env"><b>29.4°C</b><span data-i18n="cp_e1">Nhiệt độ trung bình</span></div>
+          <div class="env"><b>71%</b><span data-i18n="cp_e2">Độ ẩm trung bình</span></div>
+          <div class="env"><b>142</b><span data-i18n="cp_e3">Lượt robot tuần tra</span></div>
+          <div class="env"><b>0</b><span data-i18n="cp_e4">Cảnh báo vượt ngưỡng</span></div>
+        </div>
+      </div>
+      <div class="pcard">
+        <h4 data-i18n="cp_care">Nhật ký chăm sóc</h4>
+        <div class="timeline" id="cpTimeline"></div>
+      </div>
+      <button class="btn btn-p" style="justify-content:center" onclick="toast(t('toast_sup'))" data-i18n="cp_contact">Liên hệ hỗ trợ &amp; dịch vụ AXGO</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script>
+/* ================= I18N ================= */
+let LANG = 'vi';
+const I18N = {
+ /* nav & topbar */
+ nav_dash:['Tổng quan','Overview'], nav_robot:['Quản lý Robot','Robot Management'], nav_sensor:['Cảm biến môi trường','Environment Sensors'], nav_trace:['Truy xuất nguồn gốc','Traceability'],
+ esp_conn:['ESP32 đã kết nối','ESP32 connected'],
+ /* page titles */
+ pt_dash:['Tổng quan trang trại','Farm Overview'], pc_dash:['Bản đồ • Robot • Cảm biến • Cảnh báo','Map • Robots • Sensors • Alerts'],
+ pt_robot:['Quản lý Robot','Robot Management'], pc_robot:['Camera • Điều khiển • Arduino + L298N • Nhật ký','Camera • Control • Arduino + L298N • Logs'],
+ pt_sensor:['Cảm biến môi trường','Environment Sensors'], pc_sensor:['Nhiệt độ • Độ ẩm • Chất lượng không khí','Temperature • Humidity • Air quality'],
+ pt_trace:['Truy xuất nguồn gốc nông sản','Product Traceability'], pc_trace:['Lô sản phẩm • Mã QR • Hồ sơ chăm sóc','Product lots • QR codes • Care records'],
+ /* dashboard stats */
+ st_robots:['Robot đang hoạt động','Active robots'], st_robots_d:['AXGO-02 đang tuần tra khu B','AXGO-02 patrolling zone B'],
+ st_temp:['Nhiệt độ trung bình','Average temperature'], st_temp_d:['+1.4°C so với 1 giờ trước','+1.4°C vs 1 hour ago'],
+ st_hum:['Độ ẩm không khí','Air humidity'], st_hum_d:['Trong ngưỡng an toàn','Within safe range'],
+ st_alert:['Cảnh báo hôm nay','Alerts today'], st_alert_d:['1 cảnh báo nhiệt độ chưa xử lý','1 unresolved temperature alert'],
+ map_t:['Bản đồ trang trại thời gian thực','Real-time farm map'], map_s:['Vị trí robot, trạng thái khu canh tác và điểm cảm biến','Robot positions, plot status and sensor points'],
+ map_live:['Cập nhật trực tiếp','Live updates'], map_pond:['Ao tưới','Irrigation pond'], map_base:['Trạm sạc / Gateway','Charging dock / Gateway'],
+ lg_grow:['Đang canh tác','Growing'], lg_harv:['Sắp thu hoạch','Near harvest'], lg_alert:['Cảnh báo','Alert'],
+ al_t:['Cảnh báo gần đây','Recent alerts'], al_s:['Ngưỡng do người quản lý thiết lập','Thresholds set by the manager'],
+ ch_temp:['Nhiệt độ 24 giờ (°C)','Temperature — 24h (°C)'], ch_temp_s:['Dữ liệu từ cảm biến trên robot, gửi qua ESP32','Robot sensor data, sent via ESP32'],
+ ch_hum:['Độ ẩm 24 giờ (%)','Humidity — 24h (%)'], ch_hum_s:['Trung bình toàn bộ khu canh tác','Average across all plots'],
+ /* camera */
+ cam_t:['Camera trực tiếp từ robot','Live camera from robot'], cam_s:['Luồng video mô phỏng từ','Simulated video stream from'],
+ cam_sw:['Đổi camera trước/sau','Switch front/rear camera'], cam_snap:['Chụp ảnh hiện trường','Take field snapshot'],
+ cam_rec:['Ghi video 30 giây','Record 30s clip'], cam_ai:['Phân tích sâu bệnh (AI)','Pest analysis (AI)'],
+ /* control */
+ ctl_t:['Bảng điều khiển','Control panel'], ctl_s:['Điều khiển thủ công robot','Manual control of'],
+ btn_stop:['DỪNG','STOP'], pwm_lbl:['Tốc độ (PWM → ENA/ENB)','Speed (PWM → ENA/ENB)'],
+ btn_auto:['Chạy tuần tra tự động','Start auto patrol'], btn_auto_off:['Dừng tuần tra tự động','Stop auto patrol'], btn_home:['Về trạm sạc','Return to dock'],
+ l298_t:['Trạng thái Arduino + L298N','Arduino + L298N status'], l298_s:['Tín hiệu chân điều khiển mô phỏng theo lệnh','Simulated control-pin signals per command'],
+ motorA:['MOTOR A (bánh trái)','MOTOR A (left wheel)'], motorB:['MOTOR B (bánh phải)','MOTOR B (right wheel)'],
+ pn_dir:['HƯỚNG','DIRECTION'], pn_spd:['TỐC ĐỘ','SPEED'], pn_amp:['DÒNG TẢI','CURRENT'],
+ log_t:['Nhật ký lệnh','Command log'], log_clear:['Xoá','Clear'],
+ rl_t:['Danh sách thiết bị robot','Robot device list'], rl_s:['Nhấn vào một dòng để chọn robot cần điều khiển','Click a row to select the robot to control'], rl_add:['+ Thêm robot','+ Add robot'],
+ th_id:['Mã thiết bị','Device ID'], th_zone:['Khu vực','Zone'], th_status:['Trạng thái','Status'], th_spd:['Tốc độ','Speed'], th_conn:['Kết nối','Link'], th_maint:['Bảo trì gần nhất','Last maintenance'],
+ btn_ctl:['Điều khiển','Control'],
+ /* robot card meta */
+ rm_zone:['Khu vực','Zone'], rm_conn:['Kết nối','Link'], rm_spd:['Tốc độ','Speed'],
+ /* statuses */
+ s_auto:['Tuần tra tự động','Auto patrol'], s_manual:['Điều khiển tay','Manual control'], s_charge:['Đang sạc','Charging'], s_idle:['Chờ lệnh','Standby'],
+ zone_word:['Khu','Zone'], station:['Trạm','Dock'],
+ dir_F:['Tiến','Forward'], dir_B:['Lùi','Backward'], dir_L:['Rẽ trái','Turn left'], dir_R:['Rẽ phải','Turn right'], dir_S:['Dừng','Stop'],
+ /* sensor page */
+ s_temp:['Nhiệt độ không khí','Air temperature'], s_hum:['Độ ẩm không khí','Air humidity'], s_air:['Chất lượng không khí','Air quality'],
+ s_dht:['Cảm biến DHT22 trên robot','DHT22 sensor on robot'], s_dht2:['Cảm biến DHT22 trên robot','DHT22 sensor on robot'], s_mq:['Cảm biến MQ-135 (chỉ số tương đối)','MQ-135 sensor (relative index)'],
+ s_cur:['Hiện tại','Current'], s_cur2:['Hiện tại','Current'], s_cur3:['Hiện tại','Current'],
+ s_th:['Ngưỡng cảnh báo','Alert threshold'], s_th2:['Ngưỡng cảnh báo','Alert threshold'], s_th3:['Ngưỡng cảnh báo','Alert threshold'],
+ s_st:['Trạng thái','Status'], s_st2:['Trạng thái','Status'], s_st3:['Trạng thái','Status'],
+ s_ok:['Bình thường','Normal'], s_ok2:['Bình thường','Normal'], s_ok3:['Bình thường','Normal'], s_over:['Vượt ngưỡng!','Over limit!'], s_out:['Ngoài ngưỡng!','Out of range!'],
+ lv_t:['Dữ liệu trực tiếp (cập nhật mỗi 2 giây)','Live data (updates every 2 seconds)'],
+ lv_s:['Luồng: Robot & cảm biến → ESP32 → Wi-Fi → Cloud API → Dashboard','Flow: Robot & sensors → ESP32 → Wi-Fi → Cloud API → Dashboard'],
+ lv_rx:['Đang nhận dữ liệu','Receiving data'], lv_t2:['Nhiệt độ (°C)','Temperature (°C)'], lv_h2:['Độ ẩm (%)','Humidity (%)'],
+ sr_t:['Bản ghi cảm biến mới nhất','Latest sensor records'], sr_s:['Được lưu vào cơ sở dữ liệu đám mây kèm vị trí robot','Stored in cloud database with robot position'], sr_csv:['Xuất CSV','Export CSV'],
+ th_time:['Thời gian','Time'], th_dev:['Thiết bị','Device'], th_z:['Khu','Zone'], th_t:['Nhiệt độ','Temp'], th_h:['Độ ẩm','Humidity'], th_a:['Không khí','Air'], th_s2:['Trạng thái','Status'],
+ s_alertb:['Cảnh báo','Alert'],
+ /* trace */
+ tr1:['Lô sản phẩm đã cấp QR','Lots with QR issued'], tr1d:['+2 lô trong tuần này','+2 lots this week'],
+ tr2:['Lượt quét QR tháng này','QR scans this month'], tr2d:['Người tiêu dùng quan tâm nguồn gốc','Consumers checking origin'],
+ tr3:['Bản ghi chăm sóc','Care records'], tr3d:['Tự động ghi kèm dữ liệu cảm biến','Auto-logged with sensor data'],
+ tr4:['Lô đạt chuẩn xuất bán','Lots cleared for sale'], tr4d:['Đầy đủ hồ sơ truy xuất','Full traceability records'],
+ lot_t:['Danh sách lô nông sản','Product lot list'], lot_s:['Nhấn vào lô để xem mã QR và hồ sơ truy xuất','Click a lot to view its QR code and records'], lot_add:['+ Tạo lô mới','+ New lot'],
+ th_lot:['Mã lô','Lot ID'], th_prod:['Sản phẩm','Product'], th_zone2:['Khu canh tác','Plot'], th_sow:['Ngày gieo trồng','Sowing date'], th_harv:['Thu hoạch (dự kiến)','Harvest (est.)'], th_st3:['Trạng thái','Status'],
+ lot_sold:['Đã xuất bán','Sold'], lot_grow:['Đang canh tác','Growing'], lot_new:['Mới gieo trồng','Just sown'],
+ qr_t:['Mã QR truy xuất','Traceability QR code'], qr_lot:['Lô','Lot'],
+ qr_d:['Người tiêu dùng quét mã trên bao bì để xem nguồn gốc, quy trình chăm sóc và điều kiện môi trường của lô hàng.','Consumers scan the code on the package to view the origin, care process and environmental conditions of the lot.'],
+ qr_view:['Xem trang người tiêu dùng','Open consumer view'], qr_print:['Tải tem QR để in','Download printable QR label'],
+ qr_rec:['Hồ sơ chăm sóc & thu hoạch','Care & harvest records'],
+ /* consumer */
+ cp_verify:['Nguồn gốc đã xác thực bởi AXGO Farm','Origin verified by AXGO Farm'],
+ cp_origin:['Thông tin nguồn gốc','Origin information'],
+ cp_place:['Nơi sản xuất','Producer'], cp_place_v:['AXGO Farm — Khu A2, Đông Anh, Hà Nội','AXGO Farm — Zone A2, Dong Anh, Hanoi'],
+ cp_farmer:['Hộ canh tác','Grower'], cp_sow:['Ngày gieo trồng','Sowing date'], cp_harv:['Ngày thu hoạch','Harvest date'],
+ cp_cert:['Chứng nhận','Certification'], cp_cert_v:['VietGAP • Không thuốc BVTV hoá học','VietGAP • No chemical pesticides'],
+ cp_env:['Điều kiện môi trường trong vụ (từ robot giám sát)','Season environment (from monitoring robot)'],
+ cp_e1:['Nhiệt độ trung bình','Avg temperature'], cp_e2:['Độ ẩm trung bình','Avg humidity'], cp_e3:['Lượt robot tuần tra','Robot patrols'], cp_e4:['Cảnh báo vượt ngưỡng','Threshold alerts'],
+ cp_care:['Nhật ký chăm sóc','Care log'], cp_contact:['Liên hệ hỗ trợ & dịch vụ AXGO','Contact AXGO support & services'],
+ cp_scan:['Quét lúc','Scanned at'],
+ /* toasts & logs */
+ toast_addr:['Demo: mở biểu mẫu thêm robot mới','Demo: open the add-robot form'],
+ toast_csv:['Demo: xuất báo cáo CSV','Demo: exporting CSV report'],
+ toast_lot:['Demo: tạo lô sản phẩm mới và sinh mã QR','Demo: create a new lot and generate its QR'],
+ toast_qr:['Demo: đã tải xuống tem QR (PDF in ấn)','Demo: printable QR label downloaded (PDF)'],
+ toast_sup:['Demo: mở kênh phản hồi / hỗ trợ kỹ thuật AXGO','Demo: open AXGO feedback / technical support'],
+ toast_rec:['Demo: đang ghi video 30 giây từ robot','Demo: recording a 30-second clip from the robot'],
+ toast_ai:['Demo: AI đang phân tích hình ảnh lá cây để phát hiện sâu bệnh','Demo: AI analyzing leaf images for pests and disease'],
+ toast_snap:['Đã lưu ảnh hiện trường vào thư viện','Field snapshot saved to gallery'],
+ toast_sel:['Đã chọn %s để điều khiển và xem camera','%s selected for control and camera'],
+ toast_auto:['%s đang tuần tra tự động','%s is on auto patrol'],
+ toast_home:['%s đang quay về trạm sạc','%s returning to the dock'],
+ log_conn:['Kết nối ESP32 qua Wi-Fi thành công (RSSI -58 dBm)','ESP32 connected over Wi-Fi (RSSI -58 dBm)'],
+ log_sync:['Đồng bộ trạng thái 3 robot từ cloud database','Synced 3 robot states from cloud database'],
+ log_auto_on:['%s bắt đầu tuần tra tự động theo lộ trình','%s started auto patrol route'],
+ log_auto_off:['%s dừng chế độ tự động','%s stopped auto mode'],
+ log_home:['%s nhận lệnh quay về trạm sạc / gateway','%s ordered to return to dock / gateway'],
+ log_snap:['%s chụp ảnh hiện trường, tải lên cloud (1.2 MB)','%s captured field snapshot, uploaded to cloud (1.2 MB)'],
+ cam_front:['CAM TRƯỚC','CAM-FRONT'], cam_rear:['CAM SAU','CAM-REAR'],
+ charging_at:['Đang sạc tại trạm','Charging at dock'], patrolling:['Tuần tra khu','Patrolling zone'], batt_w:['Pin','Battery'],
+};
+function t(k){const e=I18N[k];return e?e[LANG==='vi'?0:1]:k;}
+function tf(k,...a){let s=t(k);a.forEach(x=>s=s.replace('%s',x));return s;}
+function applyLang(){
+ document.documentElement.lang=LANG;
+ document.querySelectorAll('[data-i18n]').forEach(el=>{el.innerHTML=t(el.dataset.i18n);});
+ document.querySelectorAll('[data-i18n-svg]').forEach(el=>{el.textContent=t(el.dataset.i18nSvg);});
+ document.getElementById('langVI').classList.toggle('on',LANG==='vi');
+ document.getElementById('langEN').classList.toggle('on',LANG==='en');
+ document.getElementById('pageTitle').textContent=t('pt_'+curPage);
+ document.getElementById('pageCrumb').textContent=t('pc_'+curPage);
+ renderRobots();renderAlerts();renderLots();renderSensorTable();updateAutoBtn();drawPlots();
+}
+function setLang(l){LANG=l;applyLang();}
+
+/* ================= NAVIGATION ================= */
+let curPage='dash';
+function go(p,btn){curPage=p;document.querySelectorAll('.page').forEach(e=>e.classList.remove('on'));document.getElementById('page-'+p).classList.add('on');document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('on'));btn.classList.add('on');document.getElementById('pageTitle').textContent=t('pt_'+p);document.getElementById('pageCrumb').textContent=t('pc_'+p);}
+
+/* ================= TOAST ================= */
+let toastT;function toast(m){const el=document.getElementById('toast');el.textContent=m;el.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),2600);}
+
+/* ================= FARM MAP ================= */
+const plots=[
+ {id:'A1',x:28,y:24,w:300,h:150,state:'grow',crop:['Cải ngọt','Choy sum'],temp:31.1},
+ {id:'A2',x:392,y:24,w:300,h:150,state:'harvest',crop:['Xà lách','Lettuce'],temp:30.6},
+ {id:'B1',x:28,y:226,w:300,h:150,state:'grow',crop:['Cà chua','Tomato'],temp:32.4,alert:true},
+ {id:'B2',x:392,y:226,w:170,h:150,state:'grow',crop:['Dưa leo','Cucumber'],temp:29.8},
+];
+function drawPlots(){
+ const plotG=document.getElementById('plots');plotG.innerHTML='';
+ plots.forEach(p=>{
+  const g=document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.setAttribute('class','plot');
+  const cname=p.crop[LANG==='vi'?0:1];
+  g.innerHTML=`<rect x="${p.x}" y="${p.y}" width="${p.w}" height="${p.h}" rx="10" fill="${p.state==='harvest'?'#F0E3C2':'#A9D6B8'}" stroke="${p.state==='harvest'?'#D9BE85':'#7FBF95'}" stroke-width="2"/>
+  <rect x="${p.x+10}" y="${p.y+10}" width="${p.w-20}" height="${p.h-20}" rx="6" fill="url(#${p.state==='harvest'?'rowsW':'rows'})"/>
+  <rect x="${p.x+12}" y="${p.y+12}" width="122" height="40" rx="8" fill="rgba(255,255,255,.92)"/>
+  <text x="${p.x+22}" y="${p.y+29}" font-size="13" font-weight="700" fill="#1B4332">${t('zone_word')} ${p.id}</text>
+  <text x="${p.x+22}" y="${p.y+44}" font-size="10.5" fill="#5E7268">${cname} • ${p.temp}°C</text>
+  ${p.alert?`<circle cx="${p.x+p.w-24}" cy="${p.y+26}" r="9" fill="#D64545"><animate attributeName="opacity" values="1;.35;1" dur="1.4s" repeatCount="indefinite"/></circle><text x="${p.x+p.w-24}" y="${p.y+30}" text-anchor="middle" font-size="11" fill="#fff" font-weight="800">!</text>`:''}`;
+  g.addEventListener('click',()=>toast(`${t('zone_word')} ${p.id} — ${cname}: ${p.temp}°C${p.alert?(LANG==='vi'?' • ĐANG CÓ CẢNH BÁO NHIỆT ĐỘ':' • ACTIVE TEMPERATURE ALERT'):(LANG==='vi'?' • bình thường':' • normal')}`));
+  plotG.appendChild(g);
+ });
+}
+drawPlots();
+
+const robots=[
+ {id:'AXGO-01',zone:'A1',batt:82,status:'auto',conn:'Wi-Fi',maint:'28/06/2026',path:[[80,90],[280,90],[280,140],[80,140]],pos:0,speed:0.4},
+ {id:'AXGO-02',zone:'B2',batt:64,status:'auto',conn:'LoRa',maint:'21/06/2026',path:[[420,260],[540,260],[540,350],[420,350]],pos:0,speed:0.35},
+ {id:'AXGO-03',zone:'ST',batt:31,status:'charge',conn:'Wi-Fi',maint:'15/06/2026',path:[[336,176],[336,176]],pos:0,speed:0},
+];
+const robotLayer=document.getElementById('robotLayer');
+robots.forEach((r,i)=>{
+ const g=document.createElementNS('http://www.w3.org/2000/svg','g');
+ g.setAttribute('class','robot-marker');g.id='rm'+i;
+ g.innerHTML=`<circle r="15" fill="#2D6A4F" opacity=".22"><animate attributeName="r" values="15;22;15" dur="2.2s" repeatCount="indefinite"/></circle>
+ <rect x="-10" y="-8" width="20" height="16" rx="4" fill="${r.status==='charge'?'#8A9A90':'#2D6A4F'}" stroke="#fff" stroke-width="2"/>
+ <circle cx="-4" cy="0" r="1.8" fill="#95D5B2"/><circle cx="4" cy="0" r="1.8" fill="#95D5B2"/>
+ <text y="26" text-anchor="middle" font-size="10" font-weight="700" fill="#1B4332">${r.id}</text>`;
+ g.addEventListener('click',e=>{
+   const tip=document.getElementById('mapTip'),wrap=document.getElementById('mapWrap').getBoundingClientRect();
+   tip.innerHTML=`<b>${r.id}</b> — ${r.status==='charge'?t('charging_at'):t('patrolling')+' '+r.zone} • ${t('batt_w')} ${r.batt}%`;
+   tip.style.left=(e.clientX-wrap.left)+'px';tip.style.top=(e.clientY-wrap.top)+'px';
+   tip.classList.add('show');setTimeout(()=>tip.classList.remove('show'),2200);
+ });
+ robotLayer.appendChild(g);
+});
+function lerp(a,b,tt){return a+(b-a)*tt;}
+function tickMap(){
+ robots.forEach((r,i)=>{
+   if(r.path.length<2||r.speed===0){document.getElementById('rm'+i).setAttribute('transform',`translate(${r.path[0][0]},${r.path[0][1]})`);return;}
+   r.pos=(r.pos+r.speed/100)%r.path.length;
+   const a=r.path[Math.floor(r.pos)],b=r.path[(Math.floor(r.pos)+1)%r.path.length],tt=r.pos%1;
+   document.getElementById('rm'+i).setAttribute('transform',`translate(${lerp(a[0],b[0],tt)},${lerp(a[1],b[1],tt)})`);
+ });
+ requestAnimationFrame(tickMap);
+}
+tickMap();
+
+/* ================= ALERTS ================= */
+const alerts=[
+ {t:['Nhiệt độ khu B1 vượt ngưỡng','Zone B1 temperature over limit'],d:['32.4°C ≥ 32.0°C • AXGO-02 ghi nhận lúc 09:12','32.4°C ≥ 32.0°C • logged by AXGO-02 at 09:12'],lv:'err'},
+ {t:['Pin AXGO-03 dưới 35%','AXGO-03 battery below 35%'],d:['Robot đã tự động quay về trạm sạc lúc 08:47','Robot auto-returned to dock at 08:47'],lv:'warn'},
+ {t:['Độ ẩm khu A2 trở lại bình thường','Zone A2 humidity back to normal'],d:['Đã bật tưới phun 10 phút • 07:55','Sprinklers ran for 10 minutes • 07:55'],lv:'ok'},
+ {t:['Hoàn tất tuần tra ca sáng','Morning patrol completed'],d:['AXGO-01 & AXGO-02 • 4 khu • 36 điểm đo • 06:30','AXGO-01 & AXGO-02 • 4 zones • 36 readings • 06:30'],lv:'ok'},
+];
+function renderAlerts(){
+ const L=LANG==='vi'?0:1;
+ document.getElementById('alertList').innerHTML=alerts.map(a=>`<div class="alert-item">
+ <span class="ico ${a.lv==='err'?'i-red':a.lv==='warn'?'i-amber':'i-green'}">${a.lv==='ok'?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v4M12 17.5v.5"/></svg>'}</span>
+ <div><div class="at">${a.t[L]}</div><div class="ad">${a.d[L]}</div></div></div>`).join('');
+}
+renderAlerts();
+
+/* ================= CHARTS ================= */
+function drawLine(svgId,data,color,min,max){
+ const svg=document.getElementById(svgId);const W=svg.clientWidth||600,H=svg.clientHeight||200,P=28;
+ svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+ const xs=i=>P+i*(W-P-10)/(data.length-1), ys=v=>H-P-(v-min)*(H-P-14)/(max-min);
+ let grid='';for(let g=0;g<4;g++){const y=14+g*(H-P-14)/3,v=(max-(max-min)*g/3);grid+=`<line x1="${P}" x2="${W-10}" y1="${y}" y2="${y}" stroke="#E7EFE9"/><text class="axis-lbl" x="4" y="${y+3}">${v.toFixed(0)}</text>`;}
+ const pts=data.map((v,i)=>`${xs(i)},${ys(v)}`).join(' ');
+ const area=`M${xs(0)},${ys(data[0])} `+data.map((v,i)=>`L${xs(i)},${ys(v)}`).join(' ')+` L${xs(data.length-1)},${H-P} L${xs(0)},${H-P} Z`;
+ svg.innerHTML=grid+`<path d="${area}" fill="${color}" opacity=".1"/><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2.4" stroke-linejoin="round"/>`;
+}
+const tempHist=Array.from({length:25},(_,i)=>27+4*Math.sin(i/24*Math.PI*1.4)+Math.random()*1.2);
+const humHist=Array.from({length:25},(_,i)=>74-8*Math.sin(i/24*Math.PI*1.4)+Math.random()*3);
+function drawDash(){drawLine('chTemp',tempHist,'#C0662B',24,36);drawLine('chHum',humHist,'#3B82C4',50,90);}
+drawDash();window.addEventListener('resize',()=>{drawDash();drawLive();});
+
+let liveT=Array.from({length:30},()=>30+Math.random()*2), liveH=Array.from({length:30},()=>66+Math.random()*5);
+function drawLive(){
+ const svg=document.getElementById('chLive');const W=svg.clientWidth||800,H=240,P=28;
+ svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+ const xs=i=>P+i*(W-P-10)/(liveT.length-1);
+ const yT=v=>H-P-(v-24)*(H-P-14)/(38-24), yH=v=>H-P-(v-40)*(H-P-14)/(100-40);
+ let grid='';for(let g=0;g<4;g++){const y=14+g*(H-P-14)/3;grid+=`<line x1="${P}" x2="${W-10}" y1="${y}" y2="${y}" stroke="#E7EFE9"/>`;}
+ svg.innerHTML=grid
+  +`<polyline points="${liveT.map((v,i)=>xs(i)+','+yT(v)).join(' ')}" fill="none" stroke="#C0662B" stroke-width="2.4"/>`
+  +`<polyline points="${liveH.map((v,i)=>xs(i)+','+yH(v)).join(' ')}" fill="none" stroke="#3B82C4" stroke-width="2.4"/>`
+  +`<circle cx="${xs(liveT.length-1)}" cy="${yT(liveT[liveT.length-1])}" r="4" fill="#C0662B"/>`
+  +`<circle cx="${xs(liveH.length-1)}" cy="${yH(liveH[liveH.length-1])}" r="4" fill="#3B82C4"/>`;
+}
+drawLive();
+
+function gauge(id,pct,color,txt,sub){
+ const el=document.getElementById(id);const r=48,c=2*Math.PI*r;
+ el.innerHTML=`<svg width="118" height="118" style="transform:rotate(-90deg)"><circle cx="59" cy="59" r="${r}" fill="none" stroke="#EDF2EE" stroke-width="11"/>
+ <circle cx="59" cy="59" r="${r}" fill="none" stroke="${color}" stroke-width="11" stroke-linecap="round" stroke-dasharray="${c*pct} ${c}" style="transition:stroke-dasharray .6s"/></svg>
+ <div class="gv"><div><b>${txt}</b><span style="display:block">${sub}</span></div></div>`;
+}
+let curT=31.2,curH=68,curA=182;
+function setStatus(id,ok,warnKey){const el=document.getElementById(id);el.className='badge '+(ok?'b-on':'b-err');el.innerHTML=`<span class="dot"></span>${ok?t('s_ok'):t(warnKey)}`;}
+const sensorRows=[];
+function renderSensorTable(){
+ document.getElementById('sensorTbody').innerHTML=sensorRows.map(r=>`<tr>
+  <td class="mono">${r.t}</td><td class="mono">${r.d}</td><td>${t('zone_word')} ${r.z}</td>
+  <td class="mono">${r.temp}°C</td><td class="mono">${r.hum}%</td><td class="mono">${r.air} ppm</td>
+  <td><span class="badge ${r.ok?'b-on':'b-err'}"><span class="dot"></span>${r.ok?t('s_ok'):t('s_alertb')}</span></td></tr>`).join('');
+}
+function tickSensors(){
+ curT=Math.max(26,Math.min(37,curT+(Math.random()-0.48)*0.5));
+ curH=Math.max(45,Math.min(95,curH+(Math.random()-0.5)*1.6));
+ curA=Math.max(120,Math.min(340,curA+(Math.random()-0.5)*14));
+ document.getElementById('stTemp').textContent=curT.toFixed(1);
+ document.getElementById('stHum').textContent=curH.toFixed(0);
+ gauge('gTemp',Math.min(1,curT/45),curT>=35?'#D64545':'#C0662B',curT.toFixed(1)+'°C',t('th_t'));
+ gauge('gHum',curH/100,'#3B82C4',curH.toFixed(0)+'%',t('th_h'));
+ gauge('gAir',Math.min(1,curA/400),curA>300?'#D64545':'#40916C',curA.toFixed(0),'ppm CO₂');
+ document.getElementById('gTempV').textContent=curT.toFixed(1)+'°C';
+ document.getElementById('gHumV').textContent=curH.toFixed(0)+'%';
+ document.getElementById('gAirV').textContent=curA.toFixed(0)+' ppm';
+ setStatus('gTempS',curT<35,'s_over');setStatus('gHumS',curH>=40&&curH<=90,'s_out');setStatus('gAirS',curA<=300,'s_over');
+ liveT.push(curT);liveT.shift();liveH.push(curH);liveH.shift();drawLive();
+ const zones=['A1','A2','B1','B2'],dev=['AXGO-01','AXGO-02'];
+ sensorRows.unshift({t:new Date().toLocaleTimeString('vi-VN'),d:dev[Math.floor(Math.random()*2)],z:zones[Math.floor(Math.random()*4)],temp:curT.toFixed(1),hum:curH.toFixed(0),air:curA.toFixed(0),ok:curT<35&&curA<=300});
+ if(sensorRows.length>7)sensorRows.pop();
+ renderSensorTable();
+}
+tickSensors();setInterval(tickSensors,2000);
+
+/* ================= ROBOT MANAGEMENT ================= */
+let selRobot=0,autoMode=true;
+function zoneLabel(z){return z==='ST'?t('station'):t('zone_word')+' '+z;}
+function statusBadge(s){
+ const m={auto:['b-on','s_auto'],manual:['b-blue','s_manual'],charge:['b-warn','s_charge'],idle:['b-off','s_idle']}[s];
+ return `<span class="badge ${m[0]}"><span class="dot"></span>${t(m[1])}</span>`;
+}
+function renderRobots(){
+ document.getElementById('robotCards').innerHTML=robots.map((r,i)=>`
+ <div class="card robot-card ${i===selRobot?'sel':''}" onclick="selectRobot(${i})">
+   <div class="rn"><span>🤖 ${r.id}</span>${statusBadge(r.status)}</div>
+   <div class="rmeta">
+     <div>${t('rm_zone')}<b>${r.zone==='ST'?t('station'):r.zone}</b></div>
+     <div>${t('rm_conn')}<b>${r.conn}</b></div>
+     <div>Pin<b>${r.batt}%</b></div>
+     <div>${t('rm_spd')}<b>${r.status==='charge'?'0.0':(r.speed*2).toFixed(1)} m/s</b></div>
+   </div>
+   <div class="batt"><i style="width:${r.batt}%;background:${r.batt<35?'#D64545':r.batt<60?'#E9A23B':'#40916C'}"></i></div>
+ </div>`).join('');
+ document.getElementById('robotTbody').innerHTML=robots.map((r,i)=>`
+ <tr class="rowbtn" onclick="selectRobot(${i})">
+  <td class="mono" style="font-weight:600">${r.id}</td><td>${zoneLabel(r.zone)}</td><td>${statusBadge(r.status)}</td>
+  <td class="mono">${r.batt}%</td><td class="mono">${r.status==='charge'?'0.0':(r.speed*2).toFixed(1)} m/s</td>
+  <td>${r.conn}</td><td class="mono">${r.maint}</td>
+  <td><button class="btn btn-o btn-sm" onclick="event.stopPropagation();selectRobot(${i})">${t('btn_ctl')}</button></td></tr>`).join('');
+ document.getElementById('ctlName').textContent=robots[selRobot].id;
+ document.getElementById('camName').textContent=robots[selRobot].id;
+ document.getElementById('camBatt').textContent=`BAT ${robots[selRobot].batt}% • ${(robots[selRobot].speed*2).toFixed(1)} m/s`;
+}
+function selectRobot(i){if(i!==selRobot){selRobot=i;toast(tf('toast_sel',robots[i].id));}renderRobots();}
+
+/* command log */
+function log(msg,cls='ok'){
+ const el=document.getElementById('cmdLog');
+ el.insertAdjacentHTML('afterbegin',`<div><span class="t">[${new Date().toLocaleTimeString('vi-VN')}]</span> <span class="${cls}">${msg}</span></div>`);
+ while(el.children.length>40)el.lastChild.remove();
+}
+function clearLog(){document.getElementById('cmdLog').innerHTML='';}
+
+/* L298 pin logic */
+function setPin(id,val,pwm=false){
+ const el=document.getElementById(id);
+ el.querySelector('.pv').textContent=pwm?val:(val?'HIGH':'LOW');
+ el.className='pin '+((pwm?val>0:val)?'hi':'lo');
+}
+function applyCmd(cmd){
+ const pwm=+document.getElementById('pwm').value;
+ const map={F:[1,0,1,0],B:[0,1,0,1],L:[0,1,1,0],R:[1,0,0,1],S:[0,0,0,0]}[cmd];
+ setPin('pIN1',map[0]);setPin('pIN2',map[1]);setPin('pIN3',map[2]);setPin('pIN4',map[3]);
+ const en=cmd==='S'?0:pwm;
+ setPin('pENA',en,true);setPin('pENB',en,true);
+ document.getElementById('pvDir').textContent=t('dir_'+cmd);
+ document.getElementById('pvSpd').textContent=(en/255*1.2).toFixed(1);
+ document.getElementById('pvAmp').textContent=(0.2+en/255*1.6).toFixed(1);
+ const r=robots[selRobot];
+ if(cmd==='S'){r.speed=0;if(r.status!=='charge')r.status='idle';}
+ else{r.speed=en/255*0.6;if(r.status!=='charge')r.status='manual';}
+ camSpeed=cmd==='S'?0:en/255;camTurn=cmd==='L'?-1:cmd==='R'?1:0;
+ renderRobots();
+ log(`→ ${robots[selRobot].id} CMD:${cmd} PWM:${en} | IN1-4: ${map.join('')}`,cmd==='S'?'wn':'ok');
+}
+document.querySelectorAll('#dpad .dbtn').forEach(b=>{
+ b.addEventListener('mousedown',()=>applyCmd(b.dataset.cmd));
+ b.addEventListener('mouseup',()=>{if(b.dataset.cmd!=='S')setTimeout(()=>applyCmd('S'),400);});
+});
+document.addEventListener('keydown',e=>{
+ if(!document.getElementById('page-robot').classList.contains('on'))return;
+ const k={ArrowUp:'F',ArrowDown:'B',ArrowLeft:'L',ArrowRight:'R',' ':'S'}[e.key];
+ if(k){e.preventDefault();applyCmd(k);}
+});
+document.getElementById('pwm').addEventListener('input',e=>{
+ const v=+e.target.value;
+ document.getElementById('pwmRaw').textContent=v+' / 255';
+ document.getElementById('pwmPct').textContent=Math.round(v/255*100)+'%';
+});
+function updateAutoBtn(){
+ const b=document.getElementById('btnAuto');
+ b.innerHTML=autoMode?'⏸ '+t('btn_auto_off'):'▶ '+t('btn_auto');
+ b.className=autoMode?'btn btn-d':'btn btn-p';b.style.flex='1';
+}
+function toggleAuto(){
+ autoMode=!autoMode;const r=robots[selRobot];
+ if(autoMode){r.status='auto';r.speed=0.4;camSpeed=0.55;log(tf('log_auto_on',r.id));toast(tf('toast_auto',r.id));}
+ else{r.status='idle';r.speed=0;camSpeed=0;applyCmd('S');log(tf('log_auto_off',r.id),'wn');}
+ updateAutoBtn();renderRobots();
+}
+function sendHome(){log(tf('log_home',robots[selRobot].id),'wn');toast(tf('toast_home',robots[selRobot].id));}
+
+/* ================= ROBOT CAMERA (simulated) ================= */
+const cam=document.getElementById('camCanvas'),cx=cam.getContext('2d');
+let camSpeed=0.55,camTurn=0,camOffset=0,camFront=true,camPan=0;
+function drawCam(ts){
+ const W=cam.width,H=cam.height,horizon=H*0.38;
+ camOffset+=camSpeed*2.2;camPan+=camTurn*0.8;
+ // sky
+ const sky=cx.createLinearGradient(0,0,0,horizon);
+ sky.addColorStop(0,'#BFE0F2');sky.addColorStop(1,'#E8F4EA');
+ cx.fillStyle=sky;cx.fillRect(0,0,W,horizon);
+ // sun haze
+ cx.fillStyle='rgba(255,244,200,.55)';cx.beginPath();cx.arc(W*0.78+camPan*2,horizon*0.45,34,0,7);cx.fill();
+ // distant treeline
+ cx.fillStyle='#7FA98B';
+ for(let i=0;i<14;i++){const x=((i*67+camPan*4)%(W+80))-40;cx.beginPath();cx.arc(x,horizon-6,16+(i%3)*5,Math.PI,0);cx.fill();}
+ // ground
+ const gnd=cx.createLinearGradient(0,horizon,0,H);
+ gnd.addColorStop(0,'#8FBF9A');gnd.addColorStop(1,'#4E8B5F');
+ cx.fillStyle=gnd;cx.fillRect(0,horizon,W,H-horizon);
+ // crop rows converging to vanishing point
+ const vpx=W/2+camPan*6;
+ cx.strokeStyle='rgba(27,67,50,.5)';
+ for(let r=-8;r<=8;r++){
+   cx.beginPath();cx.moveTo(vpx,horizon);
+   cx.lineTo(W/2+r*W/9,H);cx.lineWidth=1.5;cx.stroke();
+ }
+ // moving plant clumps along rows
+ cx.fillStyle='#2F6B44';
+ for(let row=-4;row<=4;row++){
+   for(let k=0;k<8;k++){
+     let d=((k*46+camOffset)%368)/368;           // 0 far -> 1 near
+     const y=horizon+d*d*(H-horizon);
+     const x=vpx+(W/2+row*W/9-vpx)*d*d + Math.sin(k*3+row)*4*d;
+     const s=1+d*7;
+     cx.beginPath();cx.ellipse(x,y,s*2.2,s,0,0,7);cx.fill();
+   }
+ }
+ // rear camera tint (looking back at chassis)
+ if(!camFront){cx.fillStyle='rgba(64,51,43,.85)';cx.fillRect(0,H-46,W,46);cx.fillStyle='#E9C46A';cx.fillRect(W/2-40,H-40,80,8);cx.fillStyle='rgba(20,30,24,.15)';cx.fillRect(0,0,W,H);}
+ // camera noise + vignette
+ cx.fillStyle='rgba(255,255,255,'+(0.015+Math.random()*0.02)+')';cx.fillRect(0,0,W,H);
+ const vg=cx.createRadialGradient(W/2,H/2,H*0.3,W/2,H/2,W*0.72);
+ vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,.32)');
+ cx.fillStyle=vg;cx.fillRect(0,0,W,H);
+ // scanline flicker
+ if(Math.random()<0.03){cx.fillStyle='rgba(255,255,255,.05)';cx.fillRect(0,Math.random()*H,W,2);}
+ requestAnimationFrame(drawCam);
+}
+requestAnimationFrame(drawCam);
+setInterval(()=>{
+ document.getElementById('camClock').textContent=new Date().toLocaleTimeString('vi-VN');
+ const r=robots[selRobot];
+ document.getElementById('camInfo').textContent=`${t(camFront?'cam_front':'cam_rear')} • RSSI -${55+Math.floor(Math.random()*6)} dBm`;
+ document.getElementById('camGPS').textContent=`21.${(1360+Math.floor(Math.random()*5))}°N, 105.82${(10+Math.floor(Math.random()*9))}°E`;
+ document.getElementById('camBatt').textContent=`BAT ${r.batt}% • ${(r.status==='charge'?0:r.speed*2).toFixed(1)} m/s`;
+},1000);
+function switchCam(){camFront=!camFront;toast(t(camFront?'cam_front':'cam_rear'));}
+function snapshot(){
+ const f=document.getElementById('camFlash');f.style.opacity=.9;setTimeout(()=>f.style.opacity=0,120);
+ log(tf('log_snap',robots[selRobot].id));toast(t('toast_snap'));
+}
+
+/* ================= TRACEABILITY ================= */
+const lots=[
+ {id:'RC-2606-A',name:['Rau cải ngọt hữu cơ','Organic choy sum'],zone:'A1',sow:'26/05/2026',harvest:'01/07/2026',st:'sold',
+  tl:[[['Gieo hạt giống F1, xử lý đất hữu cơ','Sowed F1 seeds, treated soil organically'],'26/05/2026'],
+      [['Bón phân hữu cơ vi sinh đợt 1','Applied organic bio-fertilizer, round 1'],'05/06/2026'],
+      [['Robot AXGO-01 tuần tra, không phát hiện sâu bệnh','Robot AXGO-01 patrol: no pests detected'],'14/06/2026'],
+      [['Tưới phun tự động theo cảnh báo độ ẩm','Auto sprinkler triggered by humidity alert'],'22/06/2026'],
+      [['Thu hoạch & đóng gói, cấp mã QR — 240 kg','Harvested & packed, QR issued — 240 kg'],'01/07/2026',1]]},
+ {id:'XL-2805-B',name:['Xà lách lô lô xanh','Green lollo lettuce'],zone:'A2',sow:'28/05/2026',harvest:'05/07/2026',st:'grow',
+  tl:[[['Gieo hạt trên khay ươm','Sowed in seedling trays'],'28/05/2026'],
+      [['Chuyển cây con ra luống','Transplanted seedlings to beds'],'08/06/2026'],
+      [['Bón phân hữu cơ đợt 1','Organic fertilizer, round 1'],'16/06/2026'],
+      [['Robot ghi nhận nhiệt độ ổn định 28–31°C','Robot logged stable 28–31°C'],'30/06/2026']]},
+ {id:'CC-1505-C',name:['Cà chua bi đỏ','Red cherry tomato'],zone:'B1',sow:'15/05/2026',harvest:'20/07/2026',st:'grow',
+  tl:[[['Trồng cây giống ghép','Planted grafted seedlings'],'15/05/2026'],
+      [['Làm giàn, tỉa nhánh','Trellising and pruning'],'01/06/2026'],
+      [['Cảnh báo nhiệt độ cao, tăng tưới','High-temperature alert, irrigation increased'],'03/07/2026']]},
+ {id:'DL-1006-D',name:['Dưa leo baby','Baby cucumber'],zone:'B2',sow:'10/06/2026',harvest:'25/07/2026',st:'new',
+  tl:[[['Gieo hạt, phủ màng giữ ẩm','Sowed seeds under moisture film'],'10/06/2026'],
+      [['Cây nảy mầm, tỉ lệ 96%','Germination rate 96%'],'16/06/2026']]},
+];
+function lotBadge(s){
+ const m={sold:['#E5EFF8;color:#2A6AA5','lot_sold'],grow:['#E9F5EE;color:#2D6A4F','lot_grow'],new:['#FBF1DE;color:#B57A17','lot_new']}[s];
+ return `<span class="lot-status" style="background:${m[0]}">${t(m[1])}</span>`;
+}
+let selLot=0;
+function tlHTML(l){const L=LANG==='vi'?0:1;return l.tl.map(x=>`<div class="tl-item ${x[2]?'h':''}"><div class="tt">${x[0][L]}</div><div class="tm">${x[1]}</div></div>`).join('');}
+function renderLots(){
+ const L=LANG==='vi'?0:1;
+ document.getElementById('lotTbody').innerHTML=lots.map((l,i)=>`
+ <tr class="rowbtn" style="${i===selLot?'background:var(--pale)':''}" onclick="selectLot(${i})">
+  <td class="mono" style="font-weight:600">${l.id}</td><td>${l.name[L]}</td><td>${t('zone_word')} ${l.zone}</td>
+  <td class="mono">${l.sow}</td><td class="mono">${l.harvest}</td><td>${lotBadge(l.st)}</td></tr>`).join('');
+ const l=lots[selLot];
+ document.getElementById('qrSub').textContent=t('qr_lot')+': '+l.id+' — '+l.name[L];
+ const qe=document.getElementById('qrcode');qe.innerHTML='';
+ new QRCode(qe,{text:'https://trace.axgo.farm/lot/'+l.id,width:132,height:132,colorDark:'#1B4332',colorLight:'#ffffff'});
+ document.getElementById('lotTimeline').innerHTML=tlHTML(l);
+}
+function selectLot(i){selLot=i;renderLots();}
+
+function openConsumer(){
+ const L=LANG==='vi'?0:1,l=lots[selLot];
+ document.getElementById('cpName').textContent=l.name[L];
+ document.getElementById('cpLot').textContent=(LANG==='vi'?'Mã lô: ':'Lot: ')+l.id+' • '+t('cp_scan')+' '+new Date().toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'})+', 03/07/2026';
+ document.getElementById('cpSow').textContent=l.sow;
+ document.getElementById('cpHarvest').textContent=l.harvest;
+ document.getElementById('cpTimeline').innerHTML=tlHTML(l);
+ document.getElementById('consumerModal').classList.add('on');
+}
+function closeConsumer(){document.getElementById('consumerModal').classList.remove('on');}
+
+/* ================= INIT ================= */
+renderRobots();renderLots();updateAutoBtn();
+log(t('log_conn'));log(t('log_sync'));
+
+</script>
+</body>
+</html>
